@@ -159,10 +159,12 @@ cannot stop a device it cannot reach).
      single-unit; see the mode-select section above)
 6. Follow the bring-up sequence above.
 
-## Surviving a Gielz version bump
+## Surviving upstream/vendor changes
 
-- Vendor files stay pristine (one isolated shim commit — see `MAINTAINING.md`
-  for the tag-by-tag upstream merge workflow).
+- Deploy stays pinned on a known-good upstream version; fixes are pulled
+  reactively when something breaks (see `MAINTAINING.md` for the
+  pin-&-patch-on-breakage workflow). Vendor files stay pristine apart from
+  one isolated shim commit.
 - This layer only reads the vendor entities listed at the top of
   `zendure_fleet.yaml` (the "contract").
 - `binary_sensor.zendure_fleet_vendor_contract_ok` re-checks that list

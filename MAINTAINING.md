@@ -23,9 +23,14 @@ What `main` adds on top of upstream, by design:
 
 1. **New files only** for all multi-device code: `packages/zendure2.yaml`,
    `packages/zendure_fleet.yaml`, `FLEET.md`, `MAINTAINING.md`, `patches/`.
-   New files can never produce merge conflicts — this is the whole point of
-   the layer-alongside design. **Never move any of this into the vendor
-   automation or vendor package files.**
+   New files cannot conflict with upstream *edits* — this is the whole point
+   of the layer-alongside design. **Never move any of this into the vendor
+   automation or vendor package files.** (Residual risk: if upstream ever
+   introduces a file at one of these exact paths, the merge reports an
+   add/add conflict — resolve by renaming our file, e.g.
+   `packages/zendure_fleet.yaml` → `packages/zendure_fleet_local.yaml`, and
+   updating the deploy copy step. `packages/` at the repo root does not exist
+   upstream today, so this is unlikely but not impossible.)
 2. **Exactly one modification to a vendor file** — the nordpool string shim:
    4× `item.start/end.isoformat()` → `as_datetime(item.start/end).isoformat()`
    in the `dynamic_nordpool` `raw_today`/`raw_tomorrow` reconstruction of
@@ -33,7 +38,11 @@ What `main` adds on top of upstream, by design:
    It lives in a single, clearly-messaged commit
    (`Fix dynamic_nordpool raw_today/raw_tomorrow for string-based period starts`)
    and is exported to `patches/shim-nordpool-string.patch` as a fallback.
-   This is the **only** merge-conflict risk in the entire fork.
+   This is the only **expected** merge-conflict surface. Scope note: the local
+   shim and the patch file cover the **EN package only** (that is what this
+   install deploys); the upstream PR branch intentionally fixes **EN and NL**
+   because a complete fix is more likely to be accepted. If the PR merges, the
+   local shim resolves away on the next tag merge.
 
 ## One-time setup (first machine / after re-clone)
 
@@ -63,16 +72,21 @@ git tag --merged upstream/main | sort | tail -5   # see what's new
 git merge <next-tag>                               # e.g. git merge v20261101
 ```
 
-Conflicts, if any, can only be the 4 shim hunks in
-`zendure_gielz1986_global.yaml`. Resolve by keeping the
+Expected conflicts are the 4 shim hunks in
+`zendure_gielz1986_global.yaml` (plus, theoretically, an add/add if upstream
+introduces one of our new file paths — see above). Resolve the shim hunks by
+keeping the
 `as_datetime(...)` form, or — if the merge gets messy — take the upstream
 version of the file and re-apply the shim:
 
 ```sh
 git checkout <next-tag> -- "Global (EN) Integration/packages/zendure_gielz1986_global.yaml"
 git apply patches/shim-nordpool-string.patch
-git add -A && git commit
+git add "Global (EN) Integration/packages/zendure_gielz1986_global.yaml"
+git commit
 ```
+(Add the one file explicitly — never `git add -A` during a merge, it can
+sweep in unrelated workspace changes.)
 
 If upstream has merged the nordpool fix PR, the shim hunks vanish on their
 own: the merge resolves to identical content and the local patch is retired —

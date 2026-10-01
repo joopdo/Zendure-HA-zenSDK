@@ -1,0 +1,49 @@
+From 271e67a2560fa31cc7639d194df67455b9a186cf Mon Sep 17 00:00:00 2001
+From: Joop <joopd@users.noreply.github.com>
+Date: Thu, 1 Oct 2026 15:59:32 +0200
+Subject: [PATCH] Fix dynamic_nordpool raw_today/raw_tomorrow for string-based
+ period starts
+
+Price sensors that emit ISO strings for period start/end (instead of
+datetime objects) break the raw_today/raw_tomorrow attribute
+reconstruction of sensor.dynamic_nordpool: item.start.isoformat()
+raises because strings have no isoformat().
+
+Wrap the four sites in as_datetime(), which passes datetimes through
+unchanged and parses strings, so both source types work.
+
+Local shim carried on this fork; also proposed upstream as a
+standalone bug-fix PR.
+---
+ .../packages/zendure_gielz1986_global.yaml                | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/Global (EN) Integration/packages/zendure_gielz1986_global.yaml b/Global (EN) Integration/packages/zendure_gielz1986_global.yaml
+index d6e7781..9756f2e 100644
+--- a/Global (EN) Integration/packages/zendure_gielz1986_global.yaml	
++++ b/Global (EN) Integration/packages/zendure_gielz1986_global.yaml	
+@@ -526,8 +526,8 @@ template:
+                 {% if use_15_min %}
+                   {% for item in raw %}
+                     {
+-                      "start": "{{ item.start.isoformat() }}",
+-                      "end": "{{ item.end.isoformat() }}",
++                      "start": "{{ as_datetime(item.start).isoformat() }}",
++                      "end": "{{ as_datetime(item.end).isoformat() }}",
+                       "value": {{ item.value }}
+                     }{% if not loop.last %},{% endif %}
+                   {% endfor %}
+@@ -567,8 +567,8 @@ template:
+                 {% if use_15_min %}
+                   {% for item in raw %}
+                     {
+-                      "start": "{{ item.start.isoformat() }}",
+-                      "end": "{{ item.end.isoformat() }}",
++                      "start": "{{ as_datetime(item.start).isoformat() }}",
++                      "end": "{{ as_datetime(item.end).isoformat() }}",
+                       "value": {{ item.value }}
+                     }{% if not loop.last %},{% endif %}
+                   {% endfor %}
+-- 
+2.43.0
+
